@@ -1,0 +1,6 @@
+name: BossBarApi
+main: Voltage\Api\BossBarApi
+version: 0.1
+api: 4.0.0
+authors:
+  - VirVoltaSurMC
