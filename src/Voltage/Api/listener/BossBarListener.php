@@ -3,17 +3,16 @@
 namespace Voltage\Api\listener;
 
 use pocketmine\event\Listener;
+use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerQuitEvent;
 use pocketmine\utils\SingletonTrait;
 use Voltage\Api\BossBarApi;
-use Voltage\Api\module\BossBar;
 
 class BossBarListener implements Listener
 {
     use SingletonTrait;
 
     private static $pg;
-    private BossBar $bossbar;
 
     public function __construct(BossBarApi $pg){
         self::$pg = $pg;
@@ -23,6 +22,8 @@ class BossBarListener implements Listener
     public function getPlugin() : BossBarApi {
         return self::$pg;
     }
+
+    //CHANGE LEVEL
 
     public function onQuit(PlayerQuitEvent $event) : void {
         $player = $event->getPlayer();

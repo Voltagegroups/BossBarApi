@@ -12,9 +12,85 @@
 > Note: The `master` branch may be in an unstable or even broken state during development.
 <br/>
 
-##Api
+## Api
+A very basic example can be seen here: [BossBarHud](https://github.com/Voltagegroups/BossBarHud)
 
-//TODO
+Create a new boss bar
+```PHP
+/** @var int */
+$id = BossBarApi::getManager()->createBossBar(); //you can define an id if you want
+/** @var BossBar */
+$bossbar = BossBarApi::getManager()->getBossBar(BossBarApi::getManager()->createBossBar());
+```
+
+Send a boss bar
+```PHP
+$bossbar->sendToPlayers(array $players);
+$bossbar->sendToAll();
+```
+
+Set the title and/or subtitle and/or percentage
+```PHP
+/** @var BossBar */
+$bossbar->setTitleToAll(string $title = "");
+$bossbar->setTitleToPlayers(array $players, string $title = "");
+/** @var BossBar */
+$bossbar->setSubTitleToAll(string $subTitle = "");
+$bossbar->setSubTitleToPlayers(array $players, string $subTitle = "");
+/** @var BossBar */
+$bossbar->setPercentageToAll(float $percentage = 0); //value between 0.00 and 1.00
+$bossbar->setPercentageToPlayers(array $players, float $percentage = 0); //value between 0.00 and 1.00
+```
+
+Set the Color
+```PHP
+//The entire color palette
+BossBar::COLOR_PINK
+BossBar::COLOR_BLUE
+BossBar::COLOR_RED
+BossBar::COLOR_GREEN
+BossBar::COLOR_YELLOW
+BossBar::COLOR_PURPLE
+BossBar::COLOR_WHITE
+
+/** @var BossBar */
+$bossbar->setColorToAll(BossBar::COLOR_BLUE);
+$bossbar->setColorToPlayers(array $players, BossBar::COLOR_BLUE);
+```
+
+Add and remove players
+
+```PHP
+$bossbar->addPlayer(Player $player);
+$bossbar->removePlayer(Player $player);
+
+/** @var Player[] $players */
+$bossbar->addPlayers(array $players);
+$bossbar->removePlayers(array $players);
+$bossbar->removeAllPlayers();
+```
+
+Get the entity the boss bar is assigned to
+
+```PHP
+/** @var Entity|Player $entity */
+$bar->getEntity();
+```
+
+Example
+
+```PHP
+$bossBar = BossBarApi::getManager()->getBossBar(BossBarApi::getManager()->createBossBar());
+$player = Server::getInstance()->getPlayerExact("voltage");
+$bossBar
+    ->setTitleToAll("Welcome")
+    ->setSubTitleToAll("to BossBar API")
+    ->setPercentageToAll(0.5)
+    ->setColorToAll(BossBar::COLOR_GREEN)
+    ->addPlayers(Server::getInstance()->getOnlinePlayers())
+    ->setColorToPlayers([$player], BossBar::COLOR_PINK)
+    ->sendToAll();
+```
 
 ## Contents
 

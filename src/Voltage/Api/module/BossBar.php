@@ -41,7 +41,7 @@ final class BossBar
 
     private array $packets = [];
 
-    public function __construct()
+    public function __construct(?string $title = null, ?string $subtitle = null, ?float $percentage = null, ?int $color= null, ?array $players = null, bool $send = false)
     {
         $this->entityId = Entity::nextRuntimeId();
         $metadata = new EntityMetadataCollection();
@@ -55,6 +55,24 @@ final class BossBar
         $metadata->setFloat(EntityMetadataProperties::BOUNDING_BOX_WIDTH, 0.0);
         $metadata->setFloat(EntityMetadataProperties::BOUNDING_BOX_HEIGHT, 0.0);
         $this->metadata = $metadata;
+        if (!is_null($title)) {
+            $this->setTitleToAll($title);
+        }
+        if (!is_null($subtitle)) {
+            $this->setSubTitleToAll($subtitle);
+        }
+        if (!is_null($percentage)) {
+            $this->setPercentageToAll($percentage);
+        }
+        if (!is_null($color)) {
+            $this->setColorToAll($color));
+        }
+        if (!is_null($players)) {
+            $this->addPlayers($players);
+        }
+        if ($send) {
+            $this->sendToAll();
+        }
     }
 
     /**
@@ -128,9 +146,17 @@ final class BossBar
         return $this->color;
     }
 
-    public function setColor(int $color = self::COLOR_PURPLE): self
+    public function setColorToAll(int $color = self::COLOR_PURPLE): self
     {
         $this->color = $color;
+        $this->showToAll();
+        return $this;
+    }
+
+    public function setColorToPlayers(array $players, int $color = self::COLOR_PURPLE): self
+    {
+        $this->color = $color;
+        $this->showTo($players);
         return $this;
     }
 
@@ -139,9 +165,17 @@ final class BossBar
         return $this->title;
     }
 
-    public function setTitle(string $title = ""): self
+    public function setTitleToAll(string $title = ""): self
     {
         $this->title = $title;
+        $this->sendFullTitleToAll();
+        return $this;
+    }
+
+    public function setTitleToPlayers(array $players, string $title = ""): self
+    {
+        $this->title = $title;
+        $this->sendFullTitle($players);
         return $this;
     }
 
@@ -150,9 +184,17 @@ final class BossBar
         return $this->subTitle;
     }
 
-    public function setSubTitle(string $subTitle = "") : self
+    public function setSubTitleToAll(string $subTitle = "") : self
     {
         $this->subTitle = $subTitle;
+        $this->sendFullTitleToAll();
+        return $this;
+    }
+
+    public function setSubTitleToPlayers(array $players, string $subTitle = "") : self
+    {
+        $this->subTitle = $subTitle;
+        $this->sendFullTitle($players);
         return $this;
     }
 
@@ -165,9 +207,17 @@ final class BossBar
         return mb_convert_encoding($text, 'UTF-8');
     }
 
-    public function setPercentage(float $percentage) : self
+    public function setPercentageToAll(float $percentage = 0) : self
     {
         $this->percentage = min(1, $percentage);
+        $this->sendHealthToAll();
+        return $this;
+    }
+
+    public function setPercentageToPlayers(array $players, float $percentage = 0) : self
+    {
+        $this->percentage = min(1, $percentage);
+        $this->sendHealth($players);
         return $this;
     }
 
@@ -273,11 +323,10 @@ final class BossBar
      */
     private function addPlayersPacket(array $players, DataPacket $pk) {
         foreach ($players as $player) {
-            if (isset($this->packets[$player->getId()])) {
-                $this->packets[$player->getId()][] = $pk;
-            } else {
-                $this->packets[$player->getId()] = [$pk];
+            if (!isset($this->packets[$player->getId()])) {
+                $this->packets[$player->getId()] = [];
             }
+            $this->packets[$player->getId()][$pk->getName()] = $pk;
         }
     }
 
