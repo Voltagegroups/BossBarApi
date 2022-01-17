@@ -105,6 +105,9 @@ final class BossBar
             GlobalLogger::get()->error("Adding the player who is already added to the boss bar (" . $this . ")");
             return $this;
         }
+        if ($player->spawned) {
+            //ERROR
+        }
         if (!$this->getEntity() instanceof Player) {
             $this->sendSpawnPacket([$player]);
         }
@@ -272,6 +275,18 @@ final class BossBar
         $this->sendHealth($this->getPlayers());
     }
 
+    public function sendColor(array $players) : void {
+        $pk = new BossEventPacket();
+        $pk->bossActorUniqueId = $this->entityId;
+        $pk->eventType = 6;
+        $this->color = $this->getColor();
+        $this->addPlayersPacket($players, $pk);
+    }
+
+    public function sendColorToAll() : void {
+        $this->sendColor($this->getPlayers());
+    }
+
     public function getEntity(): ?Entity
     {
         return Server::getInstance()->getWorldManager()->findEntity($this->entityId);
@@ -325,14 +340,14 @@ final class BossBar
 
     /**
      * @param array $players
-     * @param DataPacket $pk
+     * @param BossEventPacket $pk
      */
-    private function addPlayersPacket(array $players, DataPacket $pk) {
+    private function addPlayersPacket(array $players, BossEventPacket $pk) {
         foreach ($players as $player) {
             if (!isset($this->packets[$player->getId()])) {
                 $this->packets[$player->getId()] = [];
             }
-            $this->packets[$player->getId()][$pk->getName()] = $pk;
+            $this->packets[$player->getId()][$pk->eventType] = $pk;
         }
     }
 
