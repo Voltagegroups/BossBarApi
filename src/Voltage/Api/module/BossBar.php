@@ -65,7 +65,7 @@ final class BossBar
             $this->setPercentageToAll($percentage);
         }
         if (!is_null($color)) {
-            $this->setColorToAll($color));
+            $this->setColorToAll($color);
         }
         if (!is_null($players)) {
             $this->addPlayers($players);
@@ -226,27 +226,33 @@ final class BossBar
         return $this->percentage;
     }
 
-    public function hideFrom(array $players): void
+    public function hideFrom(array $players): self
     {
         $this->addPlayersPacket($players,BossEventPacket::hide($this->entityId));
+        return $this;
     }
 
-    public function hideFromAll(): void
+    public function hideFromAll(): self
     {
         $this->hideFrom($this->getPlayers());
+        return $this;
     }
 
-    public function showTo(array $players): void
+    public function showTo(array $players): self
     {
         $pk = BossEventPacket::show($this->entityId,$this->getFullTitle(),$this->getPercentage());
         $pk->color = $this->getColor();
         $this->addPlayersPacket($players, $pk);
+        return $this;
     }
 
-    public function showToAll(): void
+    public function showToAll(): self
     {
         $this->showTo($this->getPlayers());
+        return $this;
     }
+
+    //see if I change
 
     public function sendFullTitle(array $players) : void {
         $this->addPlayersPacket($players,BossEventPacket::title($this->entityId,$this->getFullTitle()));

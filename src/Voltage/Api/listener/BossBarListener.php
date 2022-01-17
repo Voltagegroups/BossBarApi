@@ -2,9 +2,10 @@
 
 namespace Voltage\Api\listener;
 
+use pocketmine\event\entity\EntityTeleportEvent;
 use pocketmine\event\Listener;
-use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerQuitEvent;
+use pocketmine\player\Player;
 use pocketmine\utils\SingletonTrait;
 use Voltage\Api\BossBarApi;
 
@@ -23,7 +24,18 @@ class BossBarListener implements Listener
         return self::$pg;
     }
 
-    //CHANGE LEVEL
+    public function onChange(EntityTeleportEvent $event) : void {
+        if (!$event->isCancelled() and $event->getEntity() instanceof Player) {
+            $player = $event->getEntity();
+            if ($event->getFrom()->getWorld()->getId() !== $event->getTo()->getWorld()->getId()) {
+                foreach (BossBarApi::getManager()->getAllBossBar() as $bossbar) {
+                    if ($bossbar->hasPlayer($player)) {
+                        $bossbar->showTo([$player])->sendToPlayers([$player]);
+                    }
+                }
+            }
+        }
+    }
 
     public function onQuit(PlayerQuitEvent $event) : void {
         $player = $event->getPlayer();
