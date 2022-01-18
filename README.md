@@ -9,8 +9,13 @@
 <br/>
 
 ## Info
-> Note: The `master` branch may be in an unstable or even broken state during development.
+> Note: The `main` branch may be in an unstable or even broken state during development.
 <br/>
+
+Versions they are available [here](https://github.com/Voltagegroups/BossBarApi/releases)
+<br/>
+Branch stable for [PM4](https://github.com/Voltagegroups/BossBarApi/tree/pm4) [PM3](https://github.com/Voltagegroups/BossBarApi/tree/pm3)
+
 
 ## Api
 A very basic example can be seen here: [BossBarHud](https://github.com/Voltagegroups/BossBarHud)
