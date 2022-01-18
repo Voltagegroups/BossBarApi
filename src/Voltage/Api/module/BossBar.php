@@ -152,14 +152,14 @@ final class BossBar
     public function setColorToAll(int $color = self::COLOR_PURPLE): self
     {
         $this->color = $color;
-        $this->showToAll();
+        $this->sendColorToAll();
         return $this;
     }
 
     public function setColorToPlayers(array $players, int $color = self::COLOR_PURPLE): self
     {
         $this->color = $color;
-        $this->showTo($players);
+        $this->sendColor($players);
         return $this;
     }
 
@@ -276,11 +276,16 @@ final class BossBar
     }
 
     public function sendColor(array $players) : void {
-        $pk = new BossEventPacket();
+        $this->hideFrom($players);
+        $this->showTo($players);
+
+        //I can't change the color
+
+       /* $pk = new BossEventPacket();
         $pk->bossActorUniqueId = $this->entityId;
-        $pk->eventType = 6;
+        $pk->eventType = BossEventPacket::TYPE_TEXTURE;
         $this->color = $this->getColor();
-        $this->addPlayersPacket($players, $pk);
+        $this->addPlayersPacket($players, $pk);*/
     }
 
     public function sendColorToAll() : void {
@@ -344,6 +349,11 @@ final class BossBar
      */
     private function addPlayersPacket(array $players, BossEventPacket $pk) {
         foreach ($players as $player) {
+            if ($player instanceof Player) {
+                if ($player->isConnected()) {
+                    $pk->playerActorUniqueId =  $player->getId();
+                }
+            }
             if (!isset($this->packets[$player->getId()])) {
                 $this->packets[$player->getId()] = [];
             }
