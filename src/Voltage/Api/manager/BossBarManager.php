@@ -9,13 +9,13 @@ final class BossBarManager
     private int $id = 0;
     private array $bossbars = [];
 
-    public function createBossBar(?int $id = null) : int {
+    public function createBossBar(?int $id = null, ?string $title = null, ?string $subtitle = null, ?float $percentage = null, ?int $color= null, ?array $players = null, bool $send = false) : int {
         if (is_null($id)) {
             $id = $this->id++;
         }
 
         if (!$this->issetBossBar($id)) {
-            $this->bossbars[$id] = new BossBar();
+            $this->bossbars[$id] = new BossBar($title, $subtitle, $percentage, $color, $players, $send);
         }
         return $id;
     }
