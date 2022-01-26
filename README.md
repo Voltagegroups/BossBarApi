@@ -23,7 +23,7 @@ A very basic example can be seen here: [BossBarHud](https://github.com/Voltagegr
 Create a new boss bar
 ```PHP
 /** @var int */
-$id = BossBarApi::getManager()->createBossBar(); //you can define an id if you want
+$id = BossBarApi::getManager()->createBossBar(?int $id = null, ?string $title = null, ?string $subtitle = null, ?float $percentage = null, ?int $color= null, ?array $players = null, bool $send = false); //you can define an id if you want
 /** @var BossBar */
 $bossbar = BossBarApi::getManager()->getBossBar(BossBarApi::getManager()->createBossBar());
 ```
@@ -82,8 +82,16 @@ Get the entity the boss bar is assigned to
 $bar->getEntity();
 ```
 
-Example
+Examples
 
+```PHP
+$bossBar = BossBarApi::getManager()->getBossBar(BossBarApi::getManager()->createBossBar(null,"Welcome","to BossBar API",0.5,BossBar::COLOR_GREEN,Server::getInstance()->getOnlinePlayers(),true));
+$player = Server::getInstance()->getPlayerExact("voltage");
+$bossBar
+    ->setColorToPlayers([$player], BossBar::COLOR_PINK)
+    ->sendToAll();
+```
+=
 ```PHP
 $bossBar = BossBarApi::getManager()->getBossBar(BossBarApi::getManager()->createBossBar());
 $player = Server::getInstance()->getPlayerExact("voltage");
