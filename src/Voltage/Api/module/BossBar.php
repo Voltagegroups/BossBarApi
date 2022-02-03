@@ -140,7 +140,7 @@ final class BossBar
 
     public function removeAllPlayers(): self
     {
-        foreach ($this->getPlayers() as $player) $this->removePlayer($player);
+        $this->removePlayers($this->getPlayers());
         return $this;
     }
 
