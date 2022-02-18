@@ -97,11 +97,11 @@ $id = BossBarApi::getManager()->createBossBar();
 $bossBar = BossBarApi::getManager()->getBossBar($id);
 $player = Server::getInstance()->getPlayerExact("voltage");
 $bossBar
+    ->addPlayers(Server::getInstance()->getOnlinePlayers())
     ->setTitleToAll("Welcome")
     ->setSubTitleToAll("to BossBar API")
     ->setPercentageToAll(0.5)
     ->setColorToAll(BossBar::COLOR_GREEN)
-    ->addPlayers(Server::getInstance()->getOnlinePlayers())
     ->setColorToPlayers([$player], BossBar::COLOR_PINK)
     ->sendToAll();
 ```
