@@ -2,6 +2,7 @@
 build-by-default: true
 branches:
 - pm4
+- main
 projects:
   BossBarApi:
     path: ""

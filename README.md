@@ -14,7 +14,7 @@
 
 Versions they are available [here](https://github.com/Voltagegroups/BossBarApi/releases)
 <br/>
-Branch stable for [PM4](https://github.com/Voltagegroups/BossBarApi/tree/pm4) [PM3](https://github.com/Voltagegroups/BossBarApi/tree/pm3)
+Branch stable for [PM4](https://github.com/Voltagegroups/BossBarApi/tree/pm4)
 
 
 ## Api
@@ -25,7 +25,7 @@ Create a new boss bar
 /** @var int */
 $id = BossBarApi::getManager()->createBossBar(?int $id = null, ?string $title = null, ?string $subtitle = null, ?float $percentage = null, ?int $color= null, ?array $players = null, bool $send = false); //you can define an id if you want
 /** @var BossBar */
-$bossbar = BossBarApi::getManager()->getBossBar(BossBarApi::getManager()->createBossBar());
+$bossbar = BossBarApi::getManager()->getBossBar($id);
 ```
 
 Send a boss bar
@@ -85,7 +85,7 @@ $bar->getEntity();
 Examples
 
 ```PHP
-$bossBar = BossBarApi::getManager()->getBossBar(BossBarApi::getManager()->createBossBar(null,"Welcome","to BossBar API",0.5,BossBar::COLOR_GREEN,Server::getInstance()->getOnlinePlayers(),true));
+$bossBar = BossBarApi::getManager()->getBossBar(BossBarApi::getManager()->createBossBar(null,"Welcome","to BossBar API",0.5,BossBar::COLOR_GREEN,Server::getInstance()->getOnlinePlayers(),false));
 $player = Server::getInstance()->getPlayerExact("voltage");
 $bossBar
     ->setColorToPlayers([$player], BossBar::COLOR_PINK)
@@ -93,14 +93,15 @@ $bossBar
 ```
 =
 ```PHP
-$bossBar = BossBarApi::getManager()->getBossBar(BossBarApi::getManager()->createBossBar());
+$id = BossBarApi::getManager()->createBossBar();
+$bossBar = BossBarApi::getManager()->getBossBar($id);
 $player = Server::getInstance()->getPlayerExact("voltage");
 $bossBar
+    ->addPlayers(Server::getInstance()->getOnlinePlayers())
     ->setTitleToAll("Welcome")
     ->setSubTitleToAll("to BossBar API")
     ->setPercentageToAll(0.5)
     ->setColorToAll(BossBar::COLOR_GREEN)
-    ->addPlayers(Server::getInstance()->getOnlinePlayers())
     ->setColorToPlayers([$player], BossBar::COLOR_PINK)
     ->sendToAll();
 ```
