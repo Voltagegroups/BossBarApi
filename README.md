@@ -14,7 +14,7 @@
 
 Versions they are available [here](https://github.com/Voltagegroups/BossBarApi/releases)
 <br/>
-Branch stable for [PM4](https://github.com/Voltagegroups/BossBarApi/tree/pm4) [PM3](https://github.com/Voltagegroups/BossBarApi/tree/pm3)
+Branch stable for [PM4](https://github.com/Voltagegroups/BossBarApi/tree/pm4)
 
 
 ## Api

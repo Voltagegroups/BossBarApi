@@ -106,7 +106,8 @@ final class BossBar
             return $this;
         }
         if ($player->spawned) {
-            //ERROR
+            GlobalLogger::get()->error("You want to send a boss bar while your player is not spawning (" . $this . ")");
+            return $this;
         }
         if (!$this->getEntity() instanceof Player) {
             $this->sendSpawnPacket([$player]);
@@ -124,9 +125,9 @@ final class BossBar
             return $this;
         }
         $this->hideFrom([$player]);
+        $this->sendToPlayers([$player]);
         unset($this->players[$player->getId()]);
         unset($this->packets[$player->getId()]);
-        $this->sendToPlayers([$player]);
         return $this;
     }
 
@@ -254,8 +255,6 @@ final class BossBar
         $this->showTo($this->getPlayers());
         return $this;
     }
-
-    //see if I change
 
     public function sendFullTitle(array $players) : void {
         $this->addPlayersPacket($players,BossEventPacket::title($this->entityId,$this->getFullTitle()));
