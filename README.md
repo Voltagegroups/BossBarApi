@@ -49,18 +49,20 @@ $bossbar->setPercentageToPlayers(array $players, float $percentage = 0); //value
 
 Set the Color
 ```PHP
-//The entire color palette
-BossBar::COLOR_PINK
-BossBar::COLOR_BLUE
-BossBar::COLOR_RED
-BossBar::COLOR_GREEN
-BossBar::COLOR_YELLOW
-BossBar::COLOR_PURPLE
-BossBar::COLOR_WHITE
+//The entire color palette in https://github.com/pmmp/BedrockProtocol/blob/master/src/types/BossBarColor.php
+use pocketmine\network\mcpe\protocol\types\BossBarColor;
+
+BossBarColor::PINK
+BossBarColor::BLUE
+BossBarColor::RED
+BossBarColor::GREEN
+BossBarColor::YELLOW
+BossBarColor::PURPLE
+BossBarColor::WHITE
 
 /** @var BossBar */
-$bossbar->setColorToAll(BossBar::COLOR_BLUE);
-$bossbar->setColorToPlayers(array $players, BossBar::COLOR_BLUE);
+$bossbar->setColorToAll(BossBarColor::BLUE);
+$bossbar->setColorToPlayers(array $players, BossBarColor::BLUE);
 ```
 
 Add and remove players

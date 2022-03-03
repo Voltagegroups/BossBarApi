@@ -3,12 +3,13 @@
 namespace Voltage\Api\module;
 
 use GlobalLogger;
+use JetBrains\PhpStorm\Pure;
 use pocketmine\entity\Attribute;
 use pocketmine\entity\Entity;
 use pocketmine\math\Vector3;
 use pocketmine\network\mcpe\protocol\AddActorPacket;
 use pocketmine\network\mcpe\protocol\BossEventPacket;
-use pocketmine\network\mcpe\protocol\DataPacket;
+use pocketmine\network\mcpe\protocol\types\BossBarColor;
 use pocketmine\network\mcpe\protocol\types\entity\Attribute as ProtocolAttribute;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataCollection;
@@ -19,28 +20,38 @@ use pocketmine\Server;
 
 final class BossBar
 {
-    public const COLOR_PINK = 0;
-    public const COLOR_BLUE = 1;
-    public const COLOR_RED = 2;
-    public const COLOR_GREEN = 3 ;
-    public const COLOR_YELLOW = 4;
-    public const COLOR_PURPLE = 5;
-    public const COLOR_WHITE = 6;
-
     /** @var Player[] */
     private array $players = [];
 
+    /** @var string */
     private string $title = "";
+
+    /** @var string */
     private string $subTitle = "";
 
+    /** @var int */
     private int $entityId;
-    private float $percentage = 1.0;
-    private int $color = self::COLOR_PURPLE;
 
+    /** @var float */
+    private float $percentage = 1.0;
+
+    /** @var int */
+    private int $color = BossBarColor::PURPLE;
+
+    /** @var EntityMetadataCollection */
     private EntityMetadataCollection $metadata;
 
+    /** @var BossEventPacket[] */
     private array $packets = [];
 
+    /**
+     * @param string|null $title
+     * @param string|null $subtitle
+     * @param float|null $percentage
+     * @param int|null $color
+     * @param array|null $players
+     * @param bool $send
+     */
     public function __construct(?string $title = null, ?string $subtitle = null, ?float $percentage = null, ?int $color= null, ?array $players = null, bool $send = false)
     {
         $this->entityId = Entity::nextRuntimeId();
@@ -76,6 +87,16 @@ final class BossBar
     }
 
     /**
+     * @param Player[] $players
+     * @return $this
+     */
+    public function reloadPlayers(array $players) : self {
+        $this->hideFrom($players);
+        $this->showTo($players);
+        return $this;
+    }
+
+    /**
      * @return Player[]
      */
     public function getPlayers(): array
@@ -83,6 +104,10 @@ final class BossBar
         return $this->players;
     }
 
+    /**
+     * @param Player $player
+     * @return bool
+     */
     public function hasPlayer(Player $player) : bool {
         return isset($this->players[$player->getId()]);
     }
@@ -99,17 +124,21 @@ final class BossBar
         return $this;
     }
 
+    /**
+     * @param Player $player
+     * @return $this
+     */
     public function addPlayer(Player $player): self
     {
         if ($this->hasPlayer($player)) {
-            GlobalLogger::get()->error("Adding the player who is already added to the boss bar (" . $this . ")");
+            GlobalLogger::get()->error("Adding the player who is already added to the boss bar [use ->hasPlayer() if you ->addPlayer()] (" . $this . ")");
             return $this;
         }
         if ($player->spawned) {
             GlobalLogger::get()->error("You want to send a boss bar while your player is not spawning (" . $this . ")");
             return $this;
         }
-        if (!$this->getEntity() instanceof Player) {
+        if (!$this->getEntity() instanceof Entity) {
             $this->sendSpawnPacket([$player]);
         }
         $this->showTo([$player]);
@@ -118,10 +147,14 @@ final class BossBar
         return $this;
     }
 
+    /**
+     * @param Player $player
+     * @return $this
+     */
     public function removePlayer(Player $player): self
     {
         if (!$this->hasPlayer($player)) {
-            GlobalLogger::get()->error("removal of the player who is not in the boss bar (" . $this . ")");
+            GlobalLogger::get()->error("removal of the player who is not in the boss bar [use ->hasPlayer() if you ->removePlayer()] (" . $this . ")");
             return $this;
         }
         $this->hideFrom([$player]);
@@ -131,6 +164,10 @@ final class BossBar
         return $this;
     }
 
+    /**
+     * @param Player[] $players
+     * @return $this
+     */
     public function removePlayers(array $players): self
     {
         foreach ($players as $player) {
@@ -139,36 +176,66 @@ final class BossBar
         return $this;
     }
 
+    /**
+     * @return $this
+     */
     public function removeAllPlayers(): self
     {
         $this->removePlayers($this->getPlayers());
         return $this;
     }
 
+    /**
+     * @return int
+     */
     public function getColor(): int
     {
         return $this->color;
     }
 
-    public function setColorToAll(int $color = self::COLOR_PURPLE): self
+    /**
+     * @param int $color
+     * @return $this
+     */
+    public function setColorToAll(int $color = BossBarColor::PURPLE): self
     {
+        if ($color < BossBarColor::PINK or $color > BossBarColor::WHITE) {
+            GlobalLogger::get()->error("Your color identifier is not correct please choose a color between " . BossBarColor::PINK . "-" . BossBarColor::WHITE . " (" . $this . ")");
+            return $this;
+        }
         $this->color = $color;
         $this->sendColorToAll();
         return $this;
     }
 
-    public function setColorToPlayers(array $players, int $color = self::COLOR_PURPLE): self
+    /**
+     * @param Player[] $players
+     * @param int $color
+     * @return $this
+     */
+    public function setColorToPlayers(array $players, int $color = BossBarColor::PURPLE): self
     {
+        if ($color < BossBarColor::PINK or $color > BossBarColor::WHITE) {
+            GlobalLogger::get()->error("Your color identifier is not correct please choose a color between " . BossBarColor::PINK . "-" . BossBarColor::WHITE . " (" . $this . ")");
+            return $this;
+        }
         $this->color = $color;
         $this->sendColor($players);
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getTitle(): string
     {
         return $this->title;
     }
 
+    /**
+     * @param string $title
+     * @return $this
+     */
     public function setTitleToAll(string $title = ""): self
     {
         $this->title = $title;
@@ -176,6 +243,11 @@ final class BossBar
         return $this;
     }
 
+    /**
+     * @param Player[] $players
+     * @param string $title
+     * @return $this
+     */
     public function setTitleToPlayers(array $players, string $title = ""): self
     {
         $this->title = $title;
@@ -183,11 +255,18 @@ final class BossBar
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getSubTitle(): string
     {
         return $this->subTitle;
     }
 
+    /**
+     * @param string $subTitle
+     * @return $this
+     */
     public function setSubTitleToAll(string $subTitle = "") : self
     {
         $this->subTitle = $subTitle;
@@ -195,6 +274,11 @@ final class BossBar
         return $this;
     }
 
+    /**
+     * @param Player[] $players
+     * @param string $subTitle
+     * @return $this
+     */
     public function setSubTitleToPlayers(array $players, string $subTitle = "") : self
     {
         $this->subTitle = $subTitle;
@@ -202,6 +286,9 @@ final class BossBar
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getFullTitle() : string
     {
         $text = $this->title;
@@ -211,37 +298,60 @@ final class BossBar
         return mb_convert_encoding($text, 'UTF-8');
     }
 
-    public function setPercentageToAll(float $percentage = 0) : self
+    /**
+     * @param float $percentage
+     * @return $this
+     */
+    public function setPercentageToAll(float $percentage = 0.00) : self
     {
         $this->percentage = min(1, $percentage);
         $this->sendHealthToAll();
         return $this;
     }
 
-    public function setPercentageToPlayers(array $players, float $percentage = 0) : self
+    /**
+     * @param Player[] $players
+     * @param float $percentage
+     * @return $this
+     */
+    public function setPercentageToPlayers(array $players, float $percentage = 0.00) : self
     {
         $this->percentage = min(1, $percentage);
         $this->sendHealth($players);
         return $this;
     }
 
+    /**
+     * @return float
+     */
     public function getPercentage(): float
     {
         return $this->percentage;
     }
 
+    /**
+     * @param Player[] $players
+     * @return $this
+     */
     public function hideFrom(array $players): self
     {
         $this->addPlayersPacket($players,BossEventPacket::hide($this->entityId));
         return $this;
     }
 
+    /**
+     * @return $this
+     */
     public function hideFromAll(): self
     {
         $this->hideFrom($this->getPlayers());
         return $this;
     }
 
+    /**
+     * @param Player[] $players
+     * @return $this
+     */
     public function showTo(array $players): self
     {
         $pk = BossEventPacket::show($this->entityId,$this->getFullTitle(),$this->getPercentage());
@@ -250,23 +360,40 @@ final class BossBar
         return $this;
     }
 
+    /**
+     * @return $this
+     */
     public function showToAll(): self
     {
         $this->showTo($this->getPlayers());
         return $this;
     }
 
-    public function sendFullTitle(array $players) : void {
+    /**
+     * @param Player[] $players
+     * @return $this
+     */
+    public function sendFullTitle(array $players) : self {
         $this->addPlayersPacket($players,BossEventPacket::title($this->entityId,$this->getFullTitle()));
+        return $this;
     }
 
-    public function sendFullTitleToAll() : void {
+    /**
+     * @return $this
+     */
+    public function sendFullTitleToAll() : self {
         $this->sendFullTitle($this->getPlayers());
+        return $this;
     }
 
-    public function sendHealth(array $players): void
+    /**
+     * @param Player[] $players
+     * @return $this
+     */
+    public function sendHealth(array $players): self
     {
         $this->addPlayersPacket($players, BossEventPacket::healthPercent($this->entityId, $this->getPercentage()));
+        return $this;
     }
 
     public function sendHealthToAll(): void
@@ -274,10 +401,13 @@ final class BossBar
         $this->sendHealth($this->getPlayers());
     }
 
-    public function sendColor(array $players) : void {
-        $this->hideFrom($players);
-        $this->showTo($players);
-
+    /**
+     * @param Player[] $players
+     * @return $this
+     */
+    public function sendColor(array $players) : self {
+        $this->reloadPlayers($players);
+        return $this;
         //I can't change the color
 
        /* $pk = new BossEventPacket();
@@ -291,12 +421,20 @@ final class BossBar
         $this->sendColor($this->getPlayers());
     }
 
+    /**
+     * @return Entity|null
+     */
     public function getEntity(): ?Entity
     {
         return Server::getInstance()->getWorldManager()->findEntity($this->entityId);
     }
 
-    public function sendToPlayers(array $players) : void {
+
+    /**
+     * @param Player[] $players
+     * @return $this
+     */
+    public function sendToPlayers(array $players) : self {
         foreach ($players as $player) {
             $id = $player->getId();
 
@@ -311,6 +449,7 @@ final class BossBar
                 unset($this->packets[$id]);
             }
         }
+        return $this;
     }
 
     public function sendToAll() : void {
@@ -343,7 +482,7 @@ final class BossBar
     }
 
     /**
-     * @param array $players
+     * @param Player[] $players
      * @param BossEventPacket $pk
      */
     private function addPlayersPacket(array $players, BossEventPacket $pk) {
@@ -365,15 +504,16 @@ final class BossBar
         return $this->metadata;
     }
 
-    public function __toString(): string
+    #[Pure] public function __toString(): string
     {
         return
             __CLASS__ .
             " ID: $this->entityId, " .
             "Players(" . count($this->players) . "): " . implode(", ",array_keys($this->players)) . ", " .
-            "Title: '" . $this->title . "', " .
-            "Subtitle: '" . $this->subTitle . "', " .
-            "Percentage: '" . $this->getPercentage() . "'";
+            "Title: '" . $this->getTitle() . "', " .
+            "Subtitle: '" . $this->getSubTitle() . "', " .
+            "Percentage: '" . $this->getPercentage() . "', " .
+            "Color: '" . $this->getColor() . "'";
     }
 
 }

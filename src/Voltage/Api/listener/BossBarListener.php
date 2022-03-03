@@ -13,13 +13,18 @@ class BossBarListener implements Listener
 {
     use SingletonTrait;
 
-    private static $pg;
+    /** @var BossBarApi */
+    private static BossBarApi $pg;
 
+    /**
+     * @param BossBarApi $pg
+     */
     public function __construct(BossBarApi $pg){
         self::$pg = $pg;
         $pg->getServer()->getPluginManager()->registerEvents($this,$pg);
     }
 
+    /** @return BossBarApi */
     public function getPlugin() : BossBarApi {
         return self::$pg;
     }
@@ -45,5 +50,4 @@ class BossBarListener implements Listener
             }
         }
     }
-
 }
