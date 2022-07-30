@@ -134,7 +134,7 @@ final class BossBar
             GlobalLogger::get()->error("Adding the player who is already added to the boss bar [use ->hasPlayer() if you ->addPlayer()] (" . $this . ")");
             return $this;
         }
-        if ($player->spawned) {
+        if (!$player->spawned) {
             GlobalLogger::get()->error("You want to send a boss bar while your player is not spawning (" . $this . ")");
             return $this;
         }
