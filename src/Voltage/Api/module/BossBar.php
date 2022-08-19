@@ -52,7 +52,7 @@ final class BossBar
      * @param array|null $players
      * @param bool $send
      */
-    public function __construct(?string $title = null, ?string $subtitle = null, ?float $percentage = null, ?int $color= null, ?array $players = null, bool $send = false)
+    public function __construct(?string $title = null, ?string $subtitle = null, ?float $percentage = null, ?int $color = null, ?array $players = null, bool $send = false)
     {
         $this->entityId = Entity::nextRuntimeId();
         $metadata = new EntityMetadataCollection();
@@ -90,7 +90,8 @@ final class BossBar
      * @param Player[] $players
      * @return $this
      */
-    public function reloadPlayers(array $players) : self {
+    public function reloadPlayers(array $players): self
+    {
         $this->hideFrom($players);
         $this->showTo($players);
         return $this;
@@ -108,7 +109,8 @@ final class BossBar
      * @param Player $player
      * @return bool
      */
-    public function hasPlayer(Player $player) : bool {
+    public function hasPlayer(Player $player): bool
+    {
         return isset($this->players[$player->getId()]);
     }
 
@@ -116,7 +118,7 @@ final class BossBar
      * @param Player[] $players
      * @return self
      */
-    public function addPlayers(array $players) : self
+    public function addPlayers(array $players): self
     {
         foreach ($players as $player) {
             $this->addPlayer($player);
@@ -267,7 +269,7 @@ final class BossBar
      * @param string $subTitle
      * @return $this
      */
-    public function setSubTitleToAll(string $subTitle = "") : self
+    public function setSubTitleToAll(string $subTitle = ""): self
     {
         $this->subTitle = $subTitle;
         $this->sendFullTitleToAll();
@@ -279,7 +281,7 @@ final class BossBar
      * @param string $subTitle
      * @return $this
      */
-    public function setSubTitleToPlayers(array $players, string $subTitle = "") : self
+    public function setSubTitleToPlayers(array $players, string $subTitle = ""): self
     {
         $this->subTitle = $subTitle;
         $this->sendFullTitle($players);
@@ -289,7 +291,7 @@ final class BossBar
     /**
      * @return string
      */
-    public function getFullTitle() : string
+    public function getFullTitle(): string
     {
         $text = $this->title;
         if (!empty($this->subTitle)) {
@@ -302,7 +304,7 @@ final class BossBar
      * @param float $percentage
      * @return $this
      */
-    public function setPercentageToAll(float $percentage = 0.00) : self
+    public function setPercentageToAll(float $percentage = 0.00): self
     {
         $this->percentage = min(1, $percentage);
         $this->sendHealthToAll();
@@ -314,7 +316,7 @@ final class BossBar
      * @param float $percentage
      * @return $this
      */
-    public function setPercentageToPlayers(array $players, float $percentage = 0.00) : self
+    public function setPercentageToPlayers(array $players, float $percentage = 0.00): self
     {
         $this->percentage = min(1, $percentage);
         $this->sendHealth($players);
@@ -335,7 +337,7 @@ final class BossBar
      */
     public function hideFrom(array $players): self
     {
-        $this->addPlayersPacket($players,BossEventPacket::hide($this->entityId));
+        $this->addPlayersPacket($players, BossEventPacket::hide($this->entityId));
         return $this;
     }
 
@@ -354,7 +356,7 @@ final class BossBar
      */
     public function showTo(array $players): self
     {
-        $pk = BossEventPacket::show($this->entityId,$this->getFullTitle(),$this->getPercentage());
+        $pk = BossEventPacket::show($this->entityId, $this->getFullTitle(), $this->getPercentage());
         $pk->color = $this->getColor();
         $this->addPlayersPacket($players, $pk);
         return $this;
@@ -373,15 +375,17 @@ final class BossBar
      * @param Player[] $players
      * @return $this
      */
-    public function sendFullTitle(array $players) : self {
-        $this->addPlayersPacket($players,BossEventPacket::title($this->entityId,$this->getFullTitle()));
+    public function sendFullTitle(array $players): self
+    {
+        $this->addPlayersPacket($players, BossEventPacket::title($this->entityId, $this->getFullTitle()));
         return $this;
     }
 
     /**
      * @return $this
      */
-    public function sendFullTitleToAll() : self {
+    public function sendFullTitleToAll(): self
+    {
         $this->sendFullTitle($this->getPlayers());
         return $this;
     }
@@ -405,19 +409,21 @@ final class BossBar
      * @param Player[] $players
      * @return $this
      */
-    public function sendColor(array $players) : self {
+    public function sendColor(array $players): self
+    {
         $this->reloadPlayers($players);
         return $this;
         //I can't change the color
 
-       /* $pk = new BossEventPacket();
-        $pk->bossActorUniqueId = $this->entityId;
-        $pk->eventType = BossEventPacket::TYPE_TEXTURE;
-        $this->color = $this->getColor();
-        $this->addPlayersPacket($players, $pk);*/
+        /* $pk = new BossEventPacket();
+         $pk->bossActorUniqueId = $this->entityId;
+         $pk->eventType = BossEventPacket::TYPE_TEXTURE;
+         $this->color = $this->getColor();
+         $this->addPlayersPacket($players, $pk);*/
     }
 
-    public function sendColorToAll() : void {
+    public function sendColorToAll(): void
+    {
         $this->sendColor($this->getPlayers());
     }
 
@@ -434,7 +440,8 @@ final class BossBar
      * @param Player[] $players
      * @return $this
      */
-    public function sendToPlayers(array $players) : self {
+    public function sendToPlayers(array $players): self
+    {
         foreach ($players as $player) {
             $id = $player->getId();
 
@@ -452,7 +459,8 @@ final class BossBar
         return $this;
     }
 
-    public function sendToAll() : void {
+    public function sendToAll(): void
+    {
         $this->sendToPlayers($this->getPlayers());
     }
 
@@ -465,12 +473,13 @@ final class BossBar
             $this->entityId,
             $this->entityId,
             EntityIds::SLIME,
-            new Vector3(0,0,0),
+            new Vector3(0, 0, 0),
             null,
             0.0,
             0.0,
             0.0,
-            [new ProtocolAttribute(Attribute::HEALTH, 0.0, 100.0, 100.0, 100.0)],
+            0.0,
+            [new ProtocolAttribute(Attribute::HEALTH, 0.0, 100.0, 100.0, 100.0, [])],
             $this->getMetadata()->getAll(),
             []
         );
@@ -485,11 +494,12 @@ final class BossBar
      * @param Player[] $players
      * @param BossEventPacket $pk
      */
-    private function addPlayersPacket(array $players, BossEventPacket $pk) {
+    private function addPlayersPacket(array $players, BossEventPacket $pk)
+    {
         foreach ($players as $player) {
             if ($player instanceof Player) {
                 if ($player->isConnected()) {
-                    $pk->playerActorUniqueId =  $player->getId();
+                    $pk->playerActorUniqueId = $player->getId();
                 }
             }
             if (!isset($this->packets[$player->getId()])) {
@@ -499,7 +509,7 @@ final class BossBar
         }
     }
 
-    public function getMetadata() : EntityMetadataCollection
+    public function getMetadata(): EntityMetadataCollection
     {
         return $this->metadata;
     }
@@ -509,7 +519,7 @@ final class BossBar
         return
             __CLASS__ .
             " ID: $this->entityId, " .
-            "Players(" . count($this->players) . "): " . implode(", ",array_keys($this->players)) . ", " .
+            "Players(" . count($this->players) . "): " . implode(", ", array_keys($this->players)) . ", " .
             "Title: '" . $this->getTitle() . "', " .
             "Subtitle: '" . $this->getSubTitle() . "', " .
             "Percentage: '" . $this->getPercentage() . "', " .
