@@ -66,6 +66,9 @@ final class BossBar
         $metadata->setFloat(EntityMetadataProperties::BOUNDING_BOX_WIDTH, 0.0);
         $metadata->setFloat(EntityMetadataProperties::BOUNDING_BOX_HEIGHT, 0.0);
         $this->metadata = $metadata;
+        if (!is_null($players)) {
+            $this->addPlayers($players);
+        }
         if (!is_null($title)) {
             $this->setTitleToAll($title);
         }
@@ -78,22 +81,9 @@ final class BossBar
         if (!is_null($color)) {
             $this->setColorToAll($color);
         }
-        if (!is_null($players)) {
-            $this->addPlayers($players);
-        }
         if ($send) {
             $this->sendToAll();
         }
-    }
-
-    /**
-     * @param Player $player
-     * @return $this
-     */
-    public function reloadPlayer(Player $player) : self {
-        $this->hideFrom($player);
-        $this->showTo($player);
-        return $this;
     }
 
     /**
@@ -230,22 +220,6 @@ final class BossBar
         }
         $this->color = $color;
         $this->sendColorPlayers($players);
-        return $this;
-    }
-
-    /**
-     * @param Player $player
-     * @param int $color
-     * @return $this
-     */
-    public function setColorToPlayer(Player $player, int $color = BossBarColor::PURPLE): self
-    {
-        if ($color < BossBarColor::PINK or $color > BossBarColor::WHITE) {
-            GlobalLogger::get()->error("Your color identifier is not correct please choose a color between " . BossBarColor::PINK . "-" . BossBarColor::WHITE . " (" . $this . ")");
-            return $this;
-        }
-        $this->color = $color;
-        $this->sendColor($player);
         return $this;
     }
 
@@ -442,22 +416,6 @@ final class BossBar
     public function sendHealthToAll(): void
     {
         $this->sendHealth($this->getPlayers());
-    }
-
-    /**
-     * @param Player $player
-     * @return $this
-     */
-    public function sendColor(Player $player) : self {
-        $this->reloadPlayer($player);
-        return $this;
-        //I can't change the color
-
-        /* $pk = new BossEventPacket();
-         $pk->bossActorUniqueId = $this->entityId;
-         $pk->eventType = BossEventPacket::TYPE_TEXTURE;
-         $this->color = $this->getColor();
-         $this->addPlayersPacket($players, $pk);*/
     }
 
     /**
