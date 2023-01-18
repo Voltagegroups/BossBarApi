@@ -3,7 +3,6 @@
 namespace Voltage\Api\module;
 
 use GlobalLogger;
-use JetBrains\PhpStorm\Pure;
 use pocketmine\entity\Attribute;
 use pocketmine\entity\Entity;
 use pocketmine\math\Vector3;
@@ -15,6 +14,7 @@ use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataCollection;
 use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataFlags;
 use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataProperties;
+use pocketmine\network\mcpe\protocol\types\entity\PropertySyncData;
 use pocketmine\player\Player;
 use pocketmine\Server;
 
@@ -49,7 +49,7 @@ final class BossBar
      * @param string|null $subtitle
      * @param float|null $percentage
      * @param int|null $color
-     * @param array|null $players
+     * @param Player[]|null $players
      * @param bool $send
      */
     public function __construct(?string $title = null, ?string $subtitle = null, ?float $percentage = null, ?int $color= null, ?array $players = null, bool $send = false)
@@ -87,12 +87,22 @@ final class BossBar
     }
 
     /**
+     * @param Player $player
+     * @return $this
+     */
+    public function reloadPlayer(Player $player) : self {
+        $this->hideFrom($player);
+        $this->showTo($player);
+        return $this;
+    }
+
+    /**
      * @param Player[] $players
      * @return $this
      */
     public function reloadPlayers(array $players) : self {
-        $this->hideFrom($players);
-        $this->showTo($players);
+        $this->hideFromPlayers($players);
+        $this->showToPlayers($players);
         return $this;
     }
 
@@ -113,6 +123,28 @@ final class BossBar
     }
 
     /**
+     * @param Player $player
+     * @return $this
+     */
+    public function addPlayer(Player $player): self
+    {
+        if ($this->hasPlayer($player)) {
+            GlobalLogger::get()->error("Adding the player who is already added to the boss bar [use ->hasPlayer() if you ->addPlayer()] (" . $this . ")");
+            return $this;
+        }
+        if (!$player->isConnected()) {
+            GlobalLogger::get()->error("You want to send a boss bar while your player is not spawning (" . $this . ")");
+            return $this;
+        }
+        if (!$this->getEntity() instanceof Entity) {
+            $this->sendSpawnPlayerPacket($player);
+        }
+        $this->players[$player->getId()] = $player;
+        $this->showTo($player);
+        return $this;
+    }
+
+    /**
      * @param Player[] $players
      * @return self
      */
@@ -128,36 +160,13 @@ final class BossBar
      * @param Player $player
      * @return $this
      */
-    public function addPlayer(Player $player): self
-    {
-        if ($this->hasPlayer($player)) {
-            GlobalLogger::get()->error("Adding the player who is already added to the boss bar [use ->hasPlayer() if you ->addPlayer()] (" . $this . ")");
-            return $this;
-        }
-        if ($player->spawned) {
-            GlobalLogger::get()->error("You want to send a boss bar while your player is not spawning (" . $this . ")");
-            return $this;
-        }
-        if (!$this->getEntity() instanceof Entity) {
-            $this->sendSpawnPacket([$player]);
-        }
-        $this->showTo([$player]);
-        $this->players[$player->getId()] = $player;
-        $this->sendToPlayers([$player]);
-        return $this;
-    }
-
-    /**
-     * @param Player $player
-     * @return $this
-     */
     public function removePlayer(Player $player): self
     {
         if (!$this->hasPlayer($player)) {
             GlobalLogger::get()->error("removal of the player who is not in the boss bar [use ->hasPlayer() if you ->removePlayer()] (" . $this . ")");
             return $this;
         }
-        $this->hideFrom([$player]);
+        $this->hideFrom($player);
         $this->sendToPlayers([$player]);
         unset($this->players[$player->getId()]);
         unset($this->packets[$player->getId()]);
@@ -220,7 +229,23 @@ final class BossBar
             return $this;
         }
         $this->color = $color;
-        $this->sendColor($players);
+        $this->sendColorPlayers($players);
+        return $this;
+    }
+
+    /**
+     * @param Player $player
+     * @param int $color
+     * @return $this
+     */
+    public function setColorToPlayer(Player $player, int $color = BossBarColor::PURPLE): self
+    {
+        if ($color < BossBarColor::PINK or $color > BossBarColor::WHITE) {
+            GlobalLogger::get()->error("Your color identifier is not correct please choose a color between " . BossBarColor::PINK . "-" . BossBarColor::WHITE . " (" . $this . ")");
+            return $this;
+        }
+        $this->color = $color;
+        $this->sendColor($player);
         return $this;
     }
 
@@ -330,10 +355,20 @@ final class BossBar
     }
 
     /**
+     * @param Player $player
+     * @return $this
+     */
+    public function hideFrom(Player $player): self
+    {
+        $this->addPlayerPacket($player,BossEventPacket::hide($this->entityId));
+        return $this;
+    }
+
+    /**
      * @param Player[] $players
      * @return $this
      */
-    public function hideFrom(array $players): self
+    public function hideFromPlayers(array $players): self
     {
         $this->addPlayersPacket($players,BossEventPacket::hide($this->entityId));
         return $this;
@@ -344,7 +379,17 @@ final class BossBar
      */
     public function hideFromAll(): self
     {
-        $this->hideFrom($this->getPlayers());
+        $this->hideFromPlayers($this->getPlayers());
+        return $this;
+    }
+
+    /**
+     * @param Player $player
+     * @return $this
+     */
+    public function showTo(Player $player): self
+    {
+        $this->addPlayerPacket($player,BossEventPacket::show($this->entityId,$this->getFullTitle(),$this->getPercentage(),0,$this->getColor()));
         return $this;
     }
 
@@ -352,11 +397,9 @@ final class BossBar
      * @param Player[] $players
      * @return $this
      */
-    public function showTo(array $players): self
+    public function showToPlayers(array $players): self
     {
-        $pk = BossEventPacket::show($this->entityId,$this->getFullTitle(),$this->getPercentage());
-        $pk->color = $this->getColor();
-        $this->addPlayersPacket($players, $pk);
+        $this->addPlayersPacket($players,BossEventPacket::show($this->entityId,$this->getFullTitle(),$this->getPercentage(),0,$this->getColor()));
         return $this;
     }
 
@@ -365,7 +408,7 @@ final class BossBar
      */
     public function showToAll(): self
     {
-        $this->showTo($this->getPlayers());
+        $this->showToPlayers($this->getPlayers());
         return $this;
     }
 
@@ -402,23 +445,39 @@ final class BossBar
     }
 
     /**
+     * @param Player $player
+     * @return $this
+     */
+    public function sendColor(Player $player) : self {
+        $this->reloadPlayer($player);
+        return $this;
+        //I can't change the color
+
+        /* $pk = new BossEventPacket();
+         $pk->bossActorUniqueId = $this->entityId;
+         $pk->eventType = BossEventPacket::TYPE_TEXTURE;
+         $this->color = $this->getColor();
+         $this->addPlayersPacket($players, $pk);*/
+    }
+
+    /**
      * @param Player[] $players
      * @return $this
      */
-    public function sendColor(array $players) : self {
+    public function sendColorPlayers(array $players) : self {
         $this->reloadPlayers($players);
         return $this;
         //I can't change the color
 
-       /* $pk = new BossEventPacket();
-        $pk->bossActorUniqueId = $this->entityId;
-        $pk->eventType = BossEventPacket::TYPE_TEXTURE;
-        $this->color = $this->getColor();
-        $this->addPlayersPacket($players, $pk);*/
+        /* $pk = new BossEventPacket();
+         $pk->bossActorUniqueId = $this->entityId;
+         $pk->eventType = BossEventPacket::TYPE_TEXTURE;
+         $this->color = $this->getColor();
+         $this->addPlayersPacket($players, $pk);*/
     }
 
     public function sendColorToAll() : void {
-        $this->sendColor($this->getPlayers());
+        $this->sendColorPlayers($this->getPlayers());
     }
 
     /**
@@ -429,6 +488,27 @@ final class BossBar
         return Server::getInstance()->getWorldManager()->findEntity($this->entityId);
     }
 
+    /**
+     * @param Player $player
+     * @return $this
+     */
+    public function sendTo(Player $player) : self {
+        $id = $player->getId();
+        if (isset($this->packets[$id])) {
+            if (isset($this->players[$id])) {
+                $player = $this->players[$id];
+                /** @var BossEventPacket[] $packet */
+                $packet = $this->packets[$id];
+
+                if ($player instanceof Player) {
+                    Server::getInstance()->broadcastPackets([$player], $packet);
+                }
+            }
+            unset($this->packets[$id]);
+        }
+
+        return $this;
+    }
 
     /**
      * @param Player[] $players
@@ -436,18 +516,7 @@ final class BossBar
      */
     public function sendToPlayers(array $players) : self {
         foreach ($players as $player) {
-            $id = $player->getId();
-
-            if (isset($this->packets[$id])) {
-                if (isset($this->players[$id])) {
-                    $player = $this->players[$id];
-
-                    if ($player instanceof Player) {
-                        Server::getInstance()->broadcastPackets([$player], $this->packets[$id]);
-                    }
-                }
-                unset($this->packets[$id]);
-            }
+            $this->sendTo($player);
         }
         return $this;
     }
@@ -456,10 +525,15 @@ final class BossBar
         $this->sendToPlayers($this->getPlayers());
     }
 
+    public function removeToAll() : void {
+        $this->removeAllPlayers();
+        $this->getEntity()->flagForDespawn();
+    }
+
     /**
-     * @param Player[] $players
+     * @param Player $player
      */
-    protected function sendSpawnPacket(array $players): void
+    protected function sendSpawnPlayerPacket(Player $player): void
     {
         $pk = AddActorPacket::create(
             $this->entityId,
@@ -470,8 +544,35 @@ final class BossBar
             0.0,
             0.0,
             0.0,
-            [new ProtocolAttribute(Attribute::HEALTH, 0.0, 100.0, 100.0, 100.0)],
+            0.0,
+            [new ProtocolAttribute(Attribute::HEALTH, 0.0, 100.0, 100.0, 100.0 ,[])],
             $this->getMetadata()->getAll(),
+            new PropertySyncData([], []),
+            []
+        );
+        $pkc = clone $pk;
+        $pkc->position = $player->getPosition()->asVector3();
+        $player->getNetworkSession()->sendDataPacket($pkc);
+    }
+
+    /**
+     * @param Player[] $players
+     */
+    protected function sendSpawnPlayersPacket(array $players): void
+    {
+        $pk = AddActorPacket::create(
+            $this->entityId,
+            $this->entityId,
+            EntityIds::SLIME,
+            new Vector3(0,0,0),
+            null,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            [new ProtocolAttribute(Attribute::HEALTH, 0.0, 100.0, 100.0, 100.0 ,[])],
+            $this->getMetadata()->getAll(),
+            new PropertySyncData([], []),
             []
         );
         foreach ($players as $player) {
@@ -482,10 +583,26 @@ final class BossBar
     }
 
     /**
+     * @param Player $player
+     * @param BossEventPacket $pk
+     */
+    private function addPlayerPacket(Player $player, BossEventPacket $pk): void
+    {
+        if ($player->isConnected()) {
+            $pk->playerActorUniqueId =  $player->getId();
+        }
+        if (!isset($this->packets[$player->getId()])) {
+            $this->packets[$player->getId()] = [];
+        }
+        $this->packets[$player->getId()][$pk->eventType] = $pk;
+    }
+
+    /**
      * @param Player[] $players
      * @param BossEventPacket $pk
      */
-    private function addPlayersPacket(array $players, BossEventPacket $pk) {
+    private function addPlayersPacket(array $players, BossEventPacket $pk): void
+    {
         foreach ($players as $player) {
             if ($player instanceof Player) {
                 if ($player->isConnected()) {
@@ -504,7 +621,7 @@ final class BossBar
         return $this->metadata;
     }
 
-    #[Pure] public function __toString(): string
+    public function __toString(): string
     {
         return
             __CLASS__ .

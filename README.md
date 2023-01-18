@@ -84,6 +84,13 @@ Get the entity the boss bar is assigned to
 $bar->getEntity();
 ```
 
+allows to reload the boss bar
+
+```PHP
+/** @var Player[] $players */
+$bar->reloadPlayers(array $players);
+```
+
 Examples
 
 ```PHP

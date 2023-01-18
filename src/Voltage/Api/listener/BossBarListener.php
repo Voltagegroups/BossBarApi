@@ -35,7 +35,7 @@ class BossBarListener implements Listener
             if ($event->getFrom()->getWorld()->getId() !== $event->getTo()->getWorld()->getId()) {
                 foreach (BossBarApi::getManager()->getAllBossBar() as $bossbar) {
                     if ($bossbar->hasPlayer($player)) {
-                        $bossbar->showTo([$player])->sendToPlayers([$player]);
+                        $bossbar->showTo($player)->sendTo($player);
                     }
                 }
             }

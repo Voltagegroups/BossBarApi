@@ -35,6 +35,7 @@ final class BossBarManager
      */
     public function removeBossBar(int $id) : void {
         if ($this->issetBossBar($id)) {
+            $this->getBossBar($id)->removeToAll();
             unset($this->bossbars[$id]);
         }
     }
